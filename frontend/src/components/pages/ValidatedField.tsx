@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import { FormControl, TextInput } from '@primer/react'
 
-
 /* {validationResult === 'validName' && (
     <FormControl.Validation variant="success">Valid name</FormControl.Validation>
 )} */
@@ -12,6 +11,7 @@ interface ValidatedFieldProps {
   required: boolean;
   label: string;
   caption: string | JSX.Element;
+  initialValue: string;
   defaultValue: string;
   valid: boolean;
   validationResult: string;
@@ -20,8 +20,8 @@ interface ValidatedFieldProps {
 };
 
 const ValidatedField = (props: ValidatedFieldProps) => {
-  const { required, label, caption, defaultValue, valid, validationResult, onChange } = props;
-  const [fieldValue, setFieldValue] = useState(defaultValue)
+  const { required, label, caption, defaultValue, valid, initialValue, validationResult, onChange } = props;
+  const [fieldValue, setFieldValue] = useState(initialValue)
 
   const handleValueChange = (e: any) => {
     const value = e.currentTarget.value;

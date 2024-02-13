@@ -3,26 +3,28 @@ import { useEffect, useState } from 'react';
 
 import ValidatedField from './ValidatedField';
 
-
 import { useAppDispatch, useAppSelector } from '../../store';
 import { allowNext } from '../../store/navSlice';
+import { setHandle, setEmail } from '../../store/dataSlice';
 import { PageTypes } from '.';
 
 import * as EmailValidator from 'email-validator';
 
-const defaultHandle = "octocat";
-const defaultEmail = "octocat@nowhere.com";
+import { defaultHandle, defaultEmail } from '../../consts';
 
 const FormPage = () => {
   const dispatch = useAppDispatch()
   // const isGoingNext = useAppSelector((state) => state.navigation.isGoingNext);
   const inFocus = useAppSelector((state) => state.navigation.currentPage === PageTypes.Form);
 
-  const [handleValue, setHandleValue] = useState(defaultHandle)
+  const currentHandle = useAppSelector((state) => state.data.handle);
+  const currentEmail = useAppSelector((state) => state.data.email);
+
+  const [handleValue, setHandleValue] = useState(currentHandle)
   const [isHandleValid, setIsHandleValid] = useState(true);
   const [handleValidationResult, setHandleValidationResult] = useState("")
 
-  const [emailValue, setEmailValue] = useState(defaultEmail)
+  const [emailValue, setEmailValue] = useState(currentEmail)
   const [isEmailValid, setIsEmailValid] = useState(true);  
   const [emailValidationResult, setEmailValidationResult] = useState("")
 
@@ -52,17 +54,16 @@ const FormPage = () => {
 
   /* lock form if needed */
   useEffect(() => {
-    console.log('2nd effect')
     if (inFocus) {
       if (isHandleValid && isEmailValid) {
-        console.log('unlocking form')
         dispatch(allowNext(true));
+        dispatch(setHandle(handleValue));
+        dispatch(setEmail(emailValue));
       } else {
-        console.log('locking form')
         dispatch(allowNext(false));
       }
     }
-  }, [dispatch, inFocus, isEmailValid, isHandleValid]);
+  }, [dispatch, emailValue, handleValue, inFocus, isEmailValid, isHandleValid]);
 
   return (
     <Box>
@@ -75,8 +76,9 @@ const FormPage = () => {
           valid={isHandleValid}
           validationResult={handleValidationResult}
           label="GitHub username"
-          defaultValue={defaultHandle}
           onChange={(value) => setHandleValue(value)}
+          initialValue={currentHandle}
+          defaultValue={defaultHandle}
           caption=
           {<>
             <Text>Target GitHub account to migrate from. For example <Token text="octocat" /> or <Token text="torvalds" /></Text>
@@ -89,8 +91,9 @@ const FormPage = () => {
           valid={isEmailValid}
           validationResult={emailValidationResult}
           label="Your email"
-          defaultValue={defaultEmail}
           onChange={(value) => setEmailValue(value)}
+          initialValue={currentEmail}
+          defaultValue={defaultEmail}
           caption=
           {<>
             <Text>GitHub email which you use for your commits. You can also use  <Token text="@users.noreply.github.com" /> private email issued by GitHub.</Text>

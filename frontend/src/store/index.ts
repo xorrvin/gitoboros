@@ -2,9 +2,11 @@ import { configureStore } from '@reduxjs/toolkit'
 import { useDispatch, useSelector } from 'react-redux'
 
 import navReducer from './navSlice'
+import dataReducer from './dataSlice'
 
 const store = configureStore({
   reducer: {
+    data: dataReducer,
     navigation: navReducer,
   },
 });
