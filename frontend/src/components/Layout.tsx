@@ -1,6 +1,8 @@
 import { Box } from '@primer/react'
 
 import AppHeader from './AppHeader';
+import AppFooter from './AppFooter';
+
 import NavigationPanel from './NavigationPanel';
 // import { WelcomePage, FormPage, FinalPage, PageTypes } from './pages'
 
@@ -20,43 +22,44 @@ const Layout = () => {
   const CurrentPage = AllPages[currentStep];
 
 
-  /* useEffect(() => {
-    if (canGoNext) {
-      goNext();
-    }
-
-    if (canGoBack) {
-      goBack();
-    }
-  }, [canGoBack, canGoNext, goBack, goNext]); */
-
   return (
     <Box
       sx={{
+        /* main canvas */
         bg: 'canvas.default',
         width: '100%',
         minHeight: '100vh',
         justifyContent: 'center',
         margin: 'auto',
-        
-        // p: 5,
       }}
     >
       <Box sx={{
+        /* primary flex container */
         display: 'flex',
-        flexDirection: 'column', alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}>
         <AppHeader />
-        <NavigationPanel
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          canGoNext={canGoNext}
-          canGoBack={canGoBack}
-          onNext={() => dispatch(goNext()) }
-          onBack={() => dispatch(goBack()) }
-        >
-          <CurrentPage />
-        </NavigationPanel>
+        <Box sx={{
+          /* main content container */
+          display: 'flex',
+          flexGrow: 1,
+          justifyContent: "center",
+          width: '100%',
+        }}>
+          <NavigationPanel
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            canGoNext={canGoNext}
+            canGoBack={canGoBack}
+            onNext={() => dispatch(goNext()) }
+            onBack={() => dispatch(goBack()) }
+          >
+            <CurrentPage />
+          </NavigationPanel>
+        </Box>
+        <AppFooter />
       </Box>
     </Box>
   )

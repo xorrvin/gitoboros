@@ -1,4 +1,4 @@
-import { Box, Text, Link } from '@primer/react';
+import { Box, Text, Link, Heading } from '@primer/react';
 import { GenericPageProps } from './GenericPage';
 
 interface WelcomePageProps extends GenericPageProps {
@@ -22,19 +22,19 @@ const WelcomePage = (props: WelcomePageProps) => {
   }
 
   return (
-    <Box>
-      <Text as="h2">Welcome!</Text>
+    <Box textAlign="left">
+      <Heading>Welcome!</Heading>
       <Text>Here you can easily migrate any <Text fontWeight={"bold"}>public</Text> GitHub account activity to the new account.</Text>
       <Text><br /><br /></Text>
-      <Text as="h2">How does it work?</Text>
+      <Heading>How does it work?</Heading>
       <Text>
-        Gitoboros starts by retrieving all contributions from the target account. Then, it creates
-        git repository with all these contributions transformed into individual commits with a
+        Gitoboros starts by retrieving all contributions from the target account. Then it creates
+        virtual git repository with all these contributions transformed into individual commits with a
         specific time and date. After that, you can clone this repository locally and upload it
         to your new GitHub account, and voilà - all these commits will be counted as your contributions!
       </Text>
       <Text><br /><br /></Text>
-      <Text as="h2">Wait, isn't this illegal?</Text>
+      <Heading>Wait, isn't this illegal?</Heading>
       <Text>
         No. That's precisely how git was designed: only name and email are needed
         to identify a contributor. For GitHub, commit with a specific email
@@ -43,7 +43,6 @@ const WelcomePage = (props: WelcomePageProps) => {
         you may want <Text>to start <Link target="_blank" href={HrefSigningYourCommits}>signing your commits</Link>.</Text>
       </Text>
       <Text><br /><br /></Text>
-      <Text as="h3">Click Next to begin!</Text>
     </Box>
   )
 }

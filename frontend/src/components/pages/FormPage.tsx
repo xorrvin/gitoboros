@@ -1,4 +1,4 @@
-import { Box, Link, Text, Token } from '@primer/react'
+import { Box, Link, Text, Token, Heading } from '@primer/react'
 import { useEffect, useState } from 'react';
 
 import ValidatedField from './ValidatedField';
@@ -67,9 +67,7 @@ const FormPage = () => {
 
   return (
     <Box>
-      <Text as="h2">Gitoboros needs some data...</Text>
-      <Text>In order to proceed, please fill out this form.</Text>
-      <Text><br /><br /></Text>
+      <Heading>Gitoboros needs some data...</Heading>
       <Box display="grid" gap={5}>
         <ValidatedField
           required
