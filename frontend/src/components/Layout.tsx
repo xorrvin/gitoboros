@@ -21,7 +21,6 @@ const Layout = () => {
 
   const CurrentPage = AllPages[currentStep];
 
-
   return (
     <Box
       sx={{

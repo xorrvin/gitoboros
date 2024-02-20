@@ -26,7 +26,7 @@ export const navSlice = createSlice({
   name: 'navigation',
   initialState,
   reducers: {
-    allowNext: (state, action) => {
+    allowNext: (state, action: PayloadAction<boolean>) => {
       state.canGoNext = action.payload
     },
     goNext: (state) => {
@@ -39,7 +39,7 @@ export const navSlice = createSlice({
       }
     },
 
-    allowBack: (state, action) => {
+    allowBack: (state, action: PayloadAction<boolean>) => {
       state.canGoBack = action.payload
     },
     goBack: (state) => {
@@ -52,7 +52,7 @@ export const navSlice = createSlice({
       }
     },
 
-    setCurrentPage: (state, action) => {
+    setCurrentPage: (state, action: PayloadAction<PageTypes>) => {
       state.currentPage = action.payload
     },
     /*

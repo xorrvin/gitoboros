@@ -37,6 +37,9 @@ class GitHubUser:
 
                 return dt.year
             else:
+                if resp.status == 404:
+                    raise GitHubException(f"User {self._username} does not exist")
+
                 raise GitHubException(f"Cannot get user info: {obj["message"]}")
 
     async def build_ranges(self) -> list[tuple[int, str, str]]:
@@ -119,7 +122,16 @@ class GitHubUser:
             results = await asyncio.gather(*tasks)
 
             # item order doesn't really mean much since timestamps are fixed
-            return functools.reduce(operator.iconcat, results, [])
+            contributions = functools.reduce(operator.iconcat, results, [])
+
+            if len(contributions) == 0:
+                raise GitHubException(f"No public contributions found for {self._username}.")
+
+            # not a real one, but good for RAM usage
+            if len(contributions) > MAX_CONTRIBS:
+                raise GitHubException(f"Contribution limit exceeded!")
+
+            return contributions
 
         # reraise to extract error later
         except Exception as e:

@@ -29,19 +29,19 @@ const NavigationPanel = (props: NavigationPanelProps) => {
       alignSelf: "center"
     }}>
       <Box sx={{
-        border: '5px solid yellow',
+        //border: '5px solid yellow',
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         flexGrow: 1,
       }}>
         <Box sx={{
-          border: '5px solid red',
+          //border: '5px solid red',
           display: "flex",
           flexGrow: 1,
         }}>{children}</Box>
 
-      <Box sx={{ border: '5px solid green', justifySelf: "flex-end", width: "100%" }}>
+      <Box sx={{ /* border: '5px solid green', */ justifySelf: "flex-end", width: "100%" }}>
         <Box sx={{ display: 'flex', textAlign: 'center', justifyContent: "space-between", width: '100%' }}>
           <Box sx={{ width: '33%' }}>
             {currentStep !== 0 &&

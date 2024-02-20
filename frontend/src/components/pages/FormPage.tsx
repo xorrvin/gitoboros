@@ -5,7 +5,7 @@ import ValidatedField from './ValidatedField';
 
 import { useAppDispatch, useAppSelector } from '../../store';
 import { allowNext } from '../../store/navSlice';
-import { setHandle, setEmail } from '../../store/dataSlice';
+import { setHandle, setEmail, setReady } from '../../store/dataSlice';
 import { PageTypes } from '.';
 
 import * as EmailValidator from 'email-validator';
@@ -14,7 +14,7 @@ import { defaultHandle, defaultEmail } from '../../consts';
 
 const FormPage = () => {
   const dispatch = useAppDispatch()
-  // const isGoingNext = useAppSelector((state) => state.navigation.isGoingNext);
+
   const inFocus = useAppSelector((state) => state.navigation.currentPage === PageTypes.Form);
 
   const currentHandle = useAppSelector((state) => state.data.handle);
@@ -56,9 +56,15 @@ const FormPage = () => {
   useEffect(() => {
     if (inFocus) {
       if (isHandleValid && isEmailValid) {
-        dispatch(allowNext(true));
+        /* fill required data */
         dispatch(setHandle(handleValue));
         dispatch(setEmail(emailValue));
+
+        /* ready for API request */
+        dispatch(setReady());
+
+        /* unblock Next button */
+        dispatch(allowNext(true));
       } else {
         dispatch(allowNext(false));
       }
