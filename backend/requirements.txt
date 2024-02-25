@@ -1,3 +1,4 @@
+redis
 aiohttp
 fastapi
 email-validator
