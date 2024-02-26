@@ -21,9 +21,9 @@ import zlib
 import struct
 import hashlib
 import operator
-import collections
 
 from enum import Enum
+from collections import namedtuple
 
 from typing import Sequence, AbstractSet
 
@@ -90,7 +90,17 @@ class GitObjectStore:
     """
     Git object storage and handling
     """
+    _storepacked = False
     _objectsdata = {}
+    _packeddata = {}
+
+    def __init__(self, store_packed = False):
+        """
+        If store_packed is True, compute packed object version on each hashing.
+        Final packfile creation will be much faster, but this will use more memory.
+        Defaults to False.
+        """
+        self._storepacked = store_packed
 
     def hash_object(self, data: bytes, obj_type: str) -> str:
         """
@@ -101,6 +111,10 @@ class GitObjectStore:
         sha1 = hashlib.sha1(full_data).hexdigest()
         compressed = zlib.compress(full_data)
         self._objectsdata[sha1] = compressed
+
+        # compute packed version as well
+        if self._storepacked:
+            self._packeddata[sha1] = self.encode_pack_object_raw(obj_type, data)
 
         return sha1
 
@@ -122,13 +136,12 @@ class GitObjectStore:
 
         return (obj_type, data)
 
-    def encode_pack_object(self, sha1: str) -> bytes:
+    def encode_pack_object_raw(self, obj_type, obj_data) -> bytes:
         """
-        Encode object to a pack
+        Encode raw object data to pack format
         """
-        obj_type, data = self.read_object(sha1)
         type_num = GitObjectType[obj_type].value
-        size = len(data)
+        size = len(obj_data)
         byte = (type_num << 4) | (size & 0x0f)
         size >>= 4
         header = []
@@ -139,7 +152,15 @@ class GitObjectStore:
             size >>= 7
         header.append(byte)
 
-        return bytes(header) + zlib.compress(data)
+        return bytes(header) + zlib.compress(obj_data)
+
+    def encode_pack_object(self, sha1: str) -> bytes:
+        """
+        Lookup an object and encode it to pack format
+        """
+        obj_type, data = self.read_object(sha1)
+
+        return self.encode_pack_object_raw(obj_type, data)
 
     def create_pack(self, objects: Sequence[str]) -> bytes:
         """
@@ -154,8 +175,26 @@ class GitObjectStore:
 
         return data
 
+    def create_pack_fast(self) -> bytes:
+        """
+        Same as create_pack, but uses all objects and their
+        precomputed pack versions. Requires store_packed = True
+        to be passed to the class constructor.
+        """
+        if not self._storepacked:
+            raise GitError("create_pack_fast requires store_packed = True")
+
+        obj_keys = self._packeddata.keys()
+        header = struct.pack("!4sLL", b"PACK", 2, len(obj_keys))
+        body = b"".join(self._packeddata[o] for o in sorted(obj_keys))
+        contents = header + body
+        sha1 = hashlib.sha1(contents).digest()
+        data = contents + sha1
+
+        return data
+
 # data for one entry in the git index (.git/index)
-GitIndexEntry = collections.namedtuple(
+GitIndexEntry = namedtuple(
     "IndexEntry",
     [
         "ctime_s",

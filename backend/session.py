@@ -1,7 +1,10 @@
 import uuid
 import hashlib
 import logging
-import asyncio
+import base64
+
+from typing import Optional
+from dataclasses import dataclass
 from contextlib import asynccontextmanager
 
 from redis.asyncio import Redis
@@ -13,10 +16,18 @@ REPO_KEY_LENGTH = 64
 # each session is active for 5 minutes
 SESSION_EXPIRY_TIME = 60 * 5
 
-# limit Redis memory to 1 GB
-REDIS_MAX_MEMORY = 2**30
-
 logger = logging.getLogger(__name__)
+
+@dataclass
+class SessionData:
+    """
+    Represents particular session data. Will be stored as a hash in Redis
+    """
+    total_objects: int
+    latest_object: str
+    packfile: bytes
+    completed: str
+    branch: Optional[str] = None
 
 class SessionException(Exception):
     pass
@@ -37,23 +48,24 @@ class RedisSessionStore:
 
         await self.redis.ping()
 
-        await self.redis.config_set("maxmemory", REDIS_MAX_MEMORY)
-        await self.redis.config_rewrite()
-
     async def teardown(self):
         await self.redis.aclose()
 
-    def create_session(self, handle: str, email: str, branch: str) -> str:
+    async def create_session(self, handle: str, email: str, branch: str) -> str:
         """
         Creates unique session ID based on combination of
         GitHub handle, email and branch values. Session ID
         is deterministic and depends only on these factors.
+        Name of the branch is going to be saved as initial
+        session info.
         """
         tmp = f"{handle} + {email} ({branch})"
         key = hashlib.blake2b(tmp.encode("ascii")).hexdigest()
-        session_id = uuid.uuid5(namespace=self.namespace, name=key)
+        session_id = str(uuid.uuid5(namespace=self.namespace, name=key))
 
-        return str(session_id)
+        await self.redis.hset(session_id, "branch", branch)
+
+        return session_id
     
     async def has_session(self, session_id: str):
         """
@@ -69,19 +81,18 @@ class RedisSessionStore:
         """
         await self.redis.expire(session_id, SESSION_EXPIRY_TIME)
 
-    async def set_session_data(self,
-        session_id: str,
-        total_objects: int,
-        latest_object: str,
-        packfile: bytes,
-    ):
+    async def set_session_data(self, session_id: str, session: SessionData):
         """
         Store data for a particular session_id as a Redis hash
         """
         await self.redis.hset(session_id, mapping={
-            "total_objects": total_objects,
-            "latest_object": latest_object,
-            "packfile": packfile,
+            "total_objects": session.total_objects,
+            "latest_object": session.latest_object,
+
+            # since decode_responses is passed to Redis, it will
+            # try to decode packfile upon accessing session data
+            # and will fail, so resort to this
+            "packfile": base64.b64encode(session.packfile),
 
             # this indicates that session has been properly written
             # and didn't crash in the middle of request handling
@@ -92,7 +103,16 @@ class RedisSessionStore:
         """
         Retrieve previously stored session data
         """
-        pass
+
+        session = await self.redis.hgetall(session_id)
+
+        return SessionData(
+            total_objects=int(session["total_objects"]),
+            latest_object=session["latest_object"],
+            packfile=base64.b64decode(session["packfile"]),
+            branch=session["branch"],
+            completed=session["completed"]
+        )
 
 # Essentially a Singleton object, which will be managed by FastAPI
 SessionStore = RedisSessionStore()

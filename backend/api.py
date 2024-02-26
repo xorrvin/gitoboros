@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, EmailStr
 from contribs import GitHubUser, MAX_CONTRIBS
 from git import GitRepo
 from utils import GitoborosException
-from session import SessionStore
+from session import SessionStore, SessionData
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
         email = migration.email
         branch = "main" if migration.branch is None else migration.branch
         username = migration.handle
-        session_id = SessionStore.create_session(username, email, branch)
+        session_id = await SessionStore.create_session(username, email, branch)
 
         logging.info(f"Got params: {migration}")
         logging.info(f"Got session: {session_id}")
@@ -55,6 +55,7 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
 
             repo = GitRepo(branch)
             user = GitHubUser(username)
+
             contribs = await user.get_contributions()
 
             logging.info(f"{len(contribs)} contributions found")
@@ -69,12 +70,16 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
 
             # count all objects and create packfile
             all_objects = repo.get_all_objects()
-            total_objects = len(all_objects)
-            head_ref = repo.get_current()
             packfile = repo.create_packfile(all_objects)
 
             # store everything
-            await SessionStore.set_session_data(session_id, total_objects, head_ref, packfile)
+            session = SessionData(
+                total_objects=len(all_objects),
+                latest_object=repo.get_current(),
+                packfile=packfile,
+                completed=session_id
+            )
+            await SessionStore.set_session_data(session_id, session)
 
         # extend session
         await SessionStore.extend_session(session_id)
