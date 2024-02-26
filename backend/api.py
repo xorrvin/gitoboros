@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import APIRouter, Response, HTTPException
@@ -7,6 +8,11 @@ from contribs import GitHubUser, MAX_CONTRIBS
 from git import GitRepo
 from utils import GitoborosException
 from session import SessionStore, SessionData
+
+# when parallel session has been already opened,
+# wait AT MOST this time in seconds for
+# its completion
+SESSION_WAIT_TIMEOUT = 10
 
 logger = logging.getLogger(__name__)
 
@@ -48,18 +54,38 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
         # check for previously made session...
         valid_session = await SessionStore.has_session(session_id)
 
+        # maybe session wasn't finalized yet?..
+        opened_session = await SessionStore.is_session_opened(session_id)
+
         if valid_session:
             logging.info("Reusing existing session")
+        elif opened_session:
+            logging.info("Session has been already opened, waiting for the completion...")
+
+            async with asyncio.timeout(SESSION_WAIT_TIMEOUT):
+                has_closed = False
+
+                while not has_closed:
+                    has_closed = await SessionStore.has_session(session_id)
+
+                    await asyncio.sleep(0.1)
+
+            logging.info("Parallel session completed, reusing the result")
         else:
+            logging.info("Opening session")
+
+            await SessionStore.open_session(session_id)
+
             logging.info("Getting contributions for a user...")
 
-            repo = GitRepo(branch)
             user = GitHubUser(username)
 
             contribs = await user.get_contributions()
 
             logging.info(f"{len(contribs)} contributions found")
             logging.info("Transferring contribs to a git repo...")
+
+            repo = GitRepo(branch)
 
             # 10MB packed for ~30K commits
             for i, ts in enumerate(contribs):
@@ -76,10 +102,13 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
             session = SessionData(
                 total_objects=len(all_objects),
                 latest_object=repo.get_current(),
-                packfile=packfile,
-                completed=session_id
+                packfile=packfile
             )
             await SessionStore.set_session_data(session_id, session)
+
+            logging.info("Closing session")
+
+            await SessionStore.close_session(session_id)
 
         # extend session
         await SessionStore.extend_session(session_id)

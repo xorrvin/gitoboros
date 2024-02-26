@@ -3,6 +3,7 @@ import hashlib
 import logging
 import base64
 
+from enum import Enum
 from typing import Optional
 from dataclasses import dataclass
 from contextlib import asynccontextmanager
@@ -18,6 +19,15 @@ SESSION_EXPIRY_TIME = 60 * 5
 
 logger = logging.getLogger(__name__)
 
+class SessionState(Enum):
+    """
+    Session state status. Once request is received, session
+    is set to opened state. After packfile is written, session
+    is marked as closed.
+    """
+    opened = "SESSION_OPENED"
+    closed = "SESSION_CLOSED"
+
 @dataclass
 class SessionData:
     """
@@ -26,7 +36,10 @@ class SessionData:
     total_objects: int
     latest_object: str
     packfile: bytes
-    completed: str
+
+    # state will be explicitly managed separately,
+    # and branch value is not mandatory (defaults to "main")
+    state: Optional[str] = None
     branch: Optional[str] = None
 
 class SessionException(Exception):
@@ -56,24 +69,37 @@ class RedisSessionStore:
         Creates unique session ID based on combination of
         GitHub handle, email and branch values. Session ID
         is deterministic and depends only on these factors.
-        Name of the branch is going to be saved as initial
-        session info.
         """
         tmp = f"{handle} + {email} ({branch})"
         key = hashlib.blake2b(tmp.encode("ascii")).hexdigest()
         session_id = str(uuid.uuid5(namespace=self.namespace, name=key))
 
+        # save branch
         await self.redis.hset(session_id, "branch", branch)
 
         return session_id
-    
+
+    async def open_session(self, session_id: str):
+        await self.redis.hset(session_id, "state", SessionState.opened.value)
+
+    async def close_session(self, session_id: str):
+        await self.redis.hset(session_id, "state", SessionState.closed.value)
+
+    async def is_session_opened(self, session_id: str):
+        """
+        Checks whether session has just been opened
+        """
+        opened = await self.redis.hget(session_id, "state")
+
+        return opened == SessionState.opened.value
+
     async def has_session(self, session_id: str):
         """
-        Checks whether session already exists and is valid
+        Checks whether session already exists and is valid (finalized)
         """
-        completed = await self.redis.hget(session_id, "completed")
+        state = await self.redis.hget(session_id, "state")
 
-        return completed == session_id
+        return state == SessionState.closed.value
 
     async def extend_session(self, session_id: str):
         """
@@ -85,18 +111,18 @@ class RedisSessionStore:
         """
         Store data for a particular session_id as a Redis hash
         """
+
         await self.redis.hset(session_id, mapping={
-            "total_objects": session.total_objects,
+            "total_objects": str(session.total_objects),
             "latest_object": session.latest_object,
 
             # since decode_responses is passed to Redis, it will
             # try to decode packfile upon accessing session data
-            # and will fail, so resort to this
+            # and will fail, so resort to this. Another (faster)
+            # option is to pass decode_responses = False and
+            # store bytes directly, but it will require casting
+            # all other strings from bytes and vice versa.
             "packfile": base64.b64encode(session.packfile),
-
-            # this indicates that session has been properly written
-            # and didn't crash in the middle of request handling
-            "completed": session_id
         })
 
     async def get_session_data(self, session_id: str):
