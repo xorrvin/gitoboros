@@ -14,15 +14,20 @@ type MigrationRequest = {
 };
 
 /* response which's returned by this method */
-type MigrationResponse = {
-  error: boolean;
-  errorName?: string;
-  message: string;
-};
+type MigrationSuccessResponse = {
+  repo: string;
+  expires: number;
+}
+
+type MigrationErrorResponse = {
+  error: string;
+  details: string;
+}
 
 /* API response for success */
 type APIResponseSuccess = {
-  session_id: string;
+  repo_id: string;
+  repo_ttl: number;
 };
 
 /* formatted API errors are wrapped in this */
@@ -36,73 +41,72 @@ type APIUnformattedError = {
   detail: string;
 }
 
-async function submitMigrationRequest(handle: string, email: string, signal: AbortSignal ): Promise<MigrationResponse> {
-  const request: MigrationRequest = {
-    handle: handle,
-    email: email,
-  }
-
-  try {
-    const { data, status } = await axios.post<APIResponseSuccess>(
-      API_URL,
-      request,
-      {
-        signal: signal,
-        headers: {
-          Accept: 'application/json',
-        },
-      },
-    );
-
-    if (data === null || data.session_id === undefined) {
-      return {
-        error: true,
-        errorName: "Server Error",
-        message: "Server has returned malformed response.",
+async function submitMigrationRequest(handle: string, email: string, signal: AbortSignal):
+  Promise<MigrationSuccessResponse> {
+    return new Promise(async (resolve, reject) => {
+      const request: MigrationRequest = {
+        handle: handle,
+        email: email,
       }
-    }
 
-    return {
-      error: false,
-      message: data.session_id,
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const typedError: AxiosErrorType = {
-        message: error.message,
-        statusCode: error.response?.status || 500,
-        statusString: error.response?.statusText || "Unknown",
-      };
+      try {
+        const { data, status } = await axios.post<APIResponseSuccess>(
+          API_URL,
+          request,
+          {
+            signal: signal,
+            headers: {
+              Accept: 'application/json',
+            },
+          },
+        );
 
-      /* most likely CORS-related */
-      if (error.code === "ERR_NETWORK") {
-        return {
-          error: true,
-          errorName: error.message,
-          message: "Unknown network error has occured."
+        if (data === null || data.repo_id === undefined) {
+          reject({
+            error: "Server Error",
+            details: "Server has returned malformed response.",
+          })
         }
-      } else {
-        /* backend has returned a formatted error; try to extract additional fields */
-        const errorResponse = error.response?.data;
-        const isFormattedError = errorResponse.error !== undefined && errorResponse.details !== undefined;
-        const isUnformattedError = errorResponse.detail !== undefined;
 
-        /* formatted error -> unformatted error -> generic HTTP error */
-        return {
-          error: true,
-          errorName: isFormattedError ? errorResponse.error : typedError.statusString,
-          message: isFormattedError ? errorResponse.details : (isUnformattedError ? errorResponse.detail : "Unknown API error.")
+        resolve({
+          repo: data.repo_id,
+          expires: data.repo_ttl,
+        })
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const typedError: AxiosErrorType = {
+            message: error.message,
+            statusCode: error.response?.status || 500,
+            statusString: error.response?.statusText || "Unknown",
+          };
+
+          /* most likely CORS-related */
+          if (error.code === "ERR_NETWORK") {
+            reject({
+              error: error.message,
+              details: "Unknown network error has occured."
+            });
+          } else {
+            /* backend has returned a formatted error; try to extract additional fields */
+            const errorResponse = error.response?.data;
+            const isFormattedError = errorResponse.error !== undefined && errorResponse.details !== undefined;
+            const isUnformattedError = errorResponse.detail !== undefined;
+
+            /* formatted error -> unformatted error -> generic HTTP error */
+            reject({
+              error: isFormattedError ? errorResponse.error : typedError.statusString,
+              details: isFormattedError ? errorResponse.details : (isUnformattedError ? errorResponse.detail : "Unknown API error.")
+            });
+          }
+        } else {
+          reject({
+            error: "Unknown Error",
+            details: error as string,
+          });
         }
       }
-    } else {
-      return {
-        error: true,
-        errorName: "Unknown Error",
-        message: error as string,
-      }
-    }
-  }
+    });
 }
 
 export { submitMigrationRequest }
-export type { MigrationRequest, MigrationResponse }
+export type { MigrationRequest, MigrationSuccessResponse, MigrationErrorResponse }

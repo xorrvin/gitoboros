@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
 import { defaultHandle, defaultEmail } from '../consts';
 
-import { submitMigrationRequest, MigrationResponse } from '../api';
+import { submitMigrationRequest, MigrationSuccessResponse, MigrationErrorResponse } from '../api';
 import { RootState } from '.';
 
 interface DataState {
@@ -13,11 +13,20 @@ interface DataState {
 
   /* API interaction states */
   isError: boolean;
+  isSuccess: boolean;
   isLoading: boolean;
 
-  /* API return values */
-  errorName: string | null;
-  finalMessage: string | null;
+  /* API error values */
+  error : {
+    name: string;
+    info: string;
+  } | null;
+
+  /* API success values */
+  repo: {
+    uri: string;
+    expires: number;
+  } | null;
 }
 
 const initialState: DataState = {
@@ -25,17 +34,18 @@ const initialState: DataState = {
   email: defaultEmail,
   branch: "",
 
-  isError: false,
   isLoading: false,
+  isSuccess: false,
+  isError: false,
 
-  errorName: null,
-  finalMessage: null,
+  error: null,
+  repo: null,
 }
 
 const abortController = new AbortController();
 
 const issueMigrationRequest = createAsyncThunk
-  <MigrationResponse, void, { rejectValue: MigrationResponse }>(
+  <MigrationSuccessResponse, void, { rejectValue: MigrationErrorResponse }>(
   'data/api',
   async (arg, thunkAPI) => {
     const { getState, rejectWithValue } = thunkAPI;
@@ -45,11 +55,9 @@ const issueMigrationRequest = createAsyncThunk
       state.data.handle,
       state.data.email,
       abortController.signal
-    );
-
-    if (result.error) {
-      return rejectWithValue(result);
-    }
+    ).catch((err) => {
+      return rejectWithValue(err);
+    });
 
     return result;
   },
@@ -68,7 +76,9 @@ export const dataSlice = createSlice({
     setReady: (state) => {
       state.isError = false;
       state.isLoading = false;
-      state.finalMessage = null;
+      state.isSuccess = false;
+      state.repo = null;
+      state.error = null;
     },
     abortMigrationRequest: (state) => {
       abortController.abort();
@@ -79,15 +89,24 @@ export const dataSlice = createSlice({
       state.isLoading = true;
     });
     builder.addCase(issueMigrationRequest.fulfilled, (state, action) => {
-      state.isLoading = false;
       state.isError = false;
-      state.finalMessage = action.payload.message;
+      state.isLoading = false;
+      state.isSuccess = true;
+
+      state.repo = {
+        uri: action.payload.repo,
+        expires: action.payload.expires,
+      }
+      //state.finalMessage = action.payload.message;
     });
     builder.addCase(issueMigrationRequest.rejected, (state, action) => {
       state.isLoading = false;
       state.isError = true;
-      state.errorName = action.payload?.errorName as string;
-      state.finalMessage = action.payload?.message as string;
+
+      state.error = {
+        name: action.payload?.error as string,
+        info: action.payload?.details as string,
+      }
     });
   },
 })
