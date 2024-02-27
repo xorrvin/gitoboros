@@ -1,20 +1,16 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, Response, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field, EmailStr
 
-from contribs import GitHubUser, MAX_CONTRIBS
-from git import GitRepo
+from git import GitRepo, DEFAULT_BRANCH, DEFAULT_COMMIT_AUTHOR
 from utils import GitoborosException
-from session import SessionStore, SessionData
-
-# when parallel session has been already opened,
-# wait AT MOST this time in seconds for
-# its completion
-SESSION_WAIT_TIMEOUT = 10
+from contribs import GitHubUser
+from session import SessionStore, SessionData, SESSION_EXPIRY_TIME, SESSION_WAIT_TIMEOUT
 
 logger = logging.getLogger(__name__)
+
 
 class MigrationRequest(BaseModel):
     """
@@ -27,9 +23,12 @@ class MigrationRequest(BaseModel):
 
 class MigrationResponse(BaseModel):
     """
-    Migration result. Should contain a successful session_id, which represents new repo.
+    Migration result.
+    session_id is a session ID, which represents new repo.
+    session_ttl is time in seconds this repo will be available.
     """
-    session_id: str
+    repo_id: str
+    repo_ttl: int
 
 class RemoveSessionRequest(BaseModel):
     """
@@ -40,87 +39,91 @@ class RemoveSessionRequest(BaseModel):
 
 MainAPIRouter = APIRouter(prefix="/migrate")
 
+
 @MainAPIRouter.post("/")
 async def start_migration_handler(migration: MigrationRequest) -> MigrationResponse:
     try:
         email = migration.email
-        branch = "main" if migration.branch is None else migration.branch
+        branch = DEFAULT_BRANCH if migration.branch is None else migration.branch
         username = migration.handle
-        session_id = await SessionStore.create_session(username, email, branch)
 
-        logging.info(f"Got params: {migration}")
-        logging.info(f"Got session: {session_id}")
+        # create session
+        session = await SessionStore.create_session_from_data(username, email, branch)
+        slogger = session.create_logger(logger)
+
+        slogger.info("session created")
 
         # check for previously made session...
-        valid_session = await SessionStore.has_session(session_id)
+        valid_session = await session.is_valid()
 
         # maybe session wasn't finalized yet?..
-        opened_session = await SessionStore.is_session_opened(session_id)
+        opened_session = await session.is_opened()
 
         if valid_session:
-            logging.info("Reusing existing session")
+            slogger.info("reusing existing session")
         elif opened_session:
-            logging.info("Session has been already opened, waiting for the completion...")
+            slogger.info("session has been already opened, waiting for the completion...")
 
             async with asyncio.timeout(SESSION_WAIT_TIMEOUT):
                 has_closed = False
 
                 while not has_closed:
-                    has_closed = await SessionStore.has_session(session_id)
+                    has_closed = await session.is_valid()
 
                     await asyncio.sleep(0.1)
 
-            logging.info("Parallel session completed, reusing the result")
+            slogger.info("parallel session completed, reusing the result")
         else:
-            logging.info("Opening session")
+            repo = GitRepo(branch)
+            user = GitHubUser(username)
 
-            await SessionStore.open_session(session_id)
+            slogger.info("opening session")
+
+            # no context manager here, since explicit closing is required
+            await session.open()
 
             logging.info("Getting contributions for a user...")
-
-            user = GitHubUser(username)
 
             contribs = await user.get_contributions()
 
             logging.info(f"{len(contribs)} contributions found")
             logging.info("Transferring contribs to a git repo...")
 
-            repo = GitRepo(branch)
-
             # 10MB packed for ~30K commits
             for i, ts in enumerate(contribs):
-                repo.do_commit("Gitoboros", email, f"Contribution #{i}", ts)
+                repo.do_commit(DEFAULT_COMMIT_AUTHOR, email, f"Contribution #{i}", ts)
 
             repo.add_binary("README", b"Hello, world!\n")
-            repo.do_commit("Gitoboros", email, "Added readme")
+            repo.do_commit(DEFAULT_COMMIT_AUTHOR, email, "Added readme")
 
             # count all objects and create packfile
             all_objects = repo.get_all_objects()
             packfile = repo.create_packfile(all_objects)
 
             # store everything
-            session = SessionData(
+            data = SessionData(
                 total_objects=len(all_objects),
                 latest_object=repo.get_current(),
                 packfile=packfile
             )
-            await SessionStore.set_session_data(session_id, session)
+            await session.set_data(data)
 
-            logging.info("Closing session")
+            slogger.info("closing session")
 
-            await SessionStore.close_session(session_id)
+            await session.close()
 
-        # extend session
-        await SessionStore.extend_session(session_id)
+        # once valid session is requested, extend its expiration time
+        await session.extend()
 
-        return MigrationResponse(session_id=session_id)
+        return MigrationResponse(repo_id=session.as_uri(), repo_ttl=SESSION_EXPIRY_TIME)
 
     # pretty format and raise the error
     except Exception as e:
         name = type(e).__qualname__
         value = str(e)
 
-        logging.exception(e)
+        logger.exception(e)
+
         raise GitoborosException(400, name, value)
 
 @MainAPIRouter.delete("/{repo_id}")

@@ -1,5 +1,7 @@
 redis
+base58
 aiohttp
 fastapi
-email-validator
 beautifulsoup4
+email-validator
+starlette-context

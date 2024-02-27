@@ -1,49 +1,60 @@
 import asyncio
 import logging
+import logging.config
+
+import uvicorn
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-
-from git import GitRepo
-from session import SessionLifespan, SessionStore
-from http_proto import GitRouter
-from contribs import GitHubUser, MAX_CONTRIBS
+from starlette_context import plugins
+from starlette_context.middleware import RawContextMiddleware
 
 from api import MainAPIRouter
+from http_proto import GitRouter
+from session import SessionLifespan
 
 from utils import GitoborosException, gitoboros_exception_handler
+from logconfig import get_generic_logging_config, get_uvicorn_logging_config
 
-logging.basicConfig(level=logging.INFO)
-
+# create app
 app = FastAPI(lifespan = SessionLifespan)
-logger = logging.getLogger("uvicorn.access")
 
-
-
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-]
-
+# setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# identify every incoming request
+app.add_middleware(
+    RawContextMiddleware,
+        plugins=(
+            plugins.RequestIdPlugin(),
+        )
+)
+
+# return extended error info
 app.add_exception_handler(GitoborosException, gitoboros_exception_handler)
 
-async def main_init():
-    #
-
-
-    logging.info("initialization completed")
-
-# https://www.uvicorn.org/#config-and-server-instances
-asyncio.create_task(main_init())
-
+# main handlers
 app.include_router(MainAPIRouter)
 app.include_router(GitRouter)
+
+async def main_init():
+    # update generic logging config
+    logging.config.dictConfig(get_generic_logging_config())
+
+    # https://www.uvicorn.org/#config-and-server-instances
+    config = uvicorn.Config("main:app", port=8000, log_config=get_uvicorn_logging_config())
+    server = uvicorn.Server(config)
+
+    await server.serve()
+
+if __name__ == '__main__':
+    asyncio.run(main_init())
