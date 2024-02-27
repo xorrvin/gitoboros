@@ -1,5 +1,11 @@
-from fastapi import Request, HTTPException
+import logging
+
+from typing import Annotated
+
+from fastapi import Path, Request, HTTPException
 from fastapi.responses import JSONResponse
+
+from session import SessionStore, SessionError, SESSION_ID_LENGTH
 
 class GitoborosException(HTTPException):
     """
@@ -16,3 +22,25 @@ async def gitoboros_exception_handler(request: Request, exc: GitoborosException)
         status_code=exc.status_code,
         content={"error": exc.error_name, "details": exc.error_details},
     )
+
+async def verify_repo_id(repo_id: Annotated[str, Path(min_length=SESSION_ID_LENGTH, max_length=SESSION_ID_LENGTH)]):
+    """
+    Dependency to verify externally provided repo (session) ID
+    """
+    valid = False
+    logger = logging.getLogger("default")
+
+    try:
+        session = SessionStore.create_session_from_uri(repo_id)
+        check = await session.is_valid()
+
+        if check:
+            valid = True
+
+    # invalid ID provided
+    except SessionError:
+        pass
+
+    if not valid:
+        logger.error(f"no such repo: {repo_id}")
+        raise HTTPException(404)
