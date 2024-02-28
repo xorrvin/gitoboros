@@ -5,7 +5,7 @@ Frontend-facing API implementation. Manages user sessions and validates input.
 import asyncio
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field, EmailStr
 
 from git import GitRepo, DEFAULT_BRANCH, DEFAULT_COMMIT_AUTHOR
@@ -46,11 +46,17 @@ class RemoveSessionRequest(BaseModel):
     session_id: str
 
 
-MainAPIRouter = APIRouter(prefix="/migrate")
+MainAPIRouter = APIRouter(prefix="/api")
 
+@MainAPIRouter.get("/hello")
+def read_main(request: Request):
+    return {"message": "Hello World", "root_path": request.scope.get("root_path")}
 
-@MainAPIRouter.post("/")
+@MainAPIRouter.post("/migrate")
 async def start_migration_handler(migration: MigrationRequest) -> MigrationResponse:
+    """
+    This endpoint will accept migration request from the user
+    """
     try:
         email = migration.email
         branch = DEFAULT_BRANCH if migration.branch is None else migration.branch
@@ -136,14 +142,3 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
         logger.exception(e)
 
         raise GitoborosException(400, name, value)
-
-
-@MainAPIRouter.delete("/{repo_id}")
-def delete_migration_handler():
-    pass
-
-
-# POST /start -> session_id
-
-# PUT /migrate/{session_id}
-# DELETE /migrate/{session_id}

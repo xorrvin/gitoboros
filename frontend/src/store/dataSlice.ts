@@ -81,6 +81,7 @@ export const dataSlice = createSlice({
       state.isError = false;
       state.isLoading = false;
       state.isSuccess = false;
+      state.isExpired = false;
       state.repo = null;
       state.error = null;
     },

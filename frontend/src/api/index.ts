@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { API_URL } from '../consts';
+import { API_BASE } from '../consts';
 
 type AxiosErrorType = {
   message: string;
@@ -51,7 +51,7 @@ async function submitMigrationRequest(handle: string, email: string, signal: Abo
 
       try {
         const { data, status } = await axios.post<APIResponseSuccess>(
-          API_URL,
+          `${API_BASE}/migrate`,
           request,
           {
             signal: signal,

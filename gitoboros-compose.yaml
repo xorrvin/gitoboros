@@ -1,0 +1,60 @@
+version: "2"
+services:
+  backend:
+    container_name: gitoboros
+    image: gitoboros/backend
+    build: ./backend
+    depends_on:
+    - redis
+    restart: unless-stopped
+    environment:
+    - HTTP_HOST=backend
+    - HTTP_PORT=8000
+    - REDIS_HOST=redis
+    ports:
+    - 8000:8000
+    cpu_count: 1
+    networks:
+    - gitoboros-network
+
+  frontend:
+    container_name: gitoboros-frontend
+    image: gitoboros/frontend
+    build: ./frontend
+    depends_on:
+    - backend
+    restart: unless-stopped
+    volumes:
+    - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+    - 8080:8080
+    networks:
+    - gitoboros-network
+
+  redis:
+    container_name: redis
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server /etc/redis-server.conf
+    mem_limit: 1024m
+    cpu_count: 2
+    volumes:
+    - ./config/redis.conf:/etc/redis-server.conf
+    networks:
+    - gitoboros-network
+
+
+    
+  # uncomment for cloudflare deployment
+  #tunnel:
+  #  container_name: tunnel
+  #  image: cloudflare/cloudflared
+  #  restart: unless-stopped
+  #  command: tunnel --no-autoupdate run
+  #  networks:
+  #  - gitoboros-network
+  #  environment:
+  #  - TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
+
+networks:
+  gitoboros-network:

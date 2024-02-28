@@ -1,2 +1,1 @@
-export const API_URL = "http://localhost:8000/migrate/";
-// export const API_URL="/api";
+export const API_BASE = "/api";

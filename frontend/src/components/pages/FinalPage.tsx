@@ -7,8 +7,6 @@ import { useAppSelector, useAppDispatch } from '../../store';
 import { issueMigrationRequest, setExpired } from '../../store/dataSlice';
 import { allowBack } from '../../store/navSlice';
 
-import { publicURL } from '../../consts';
-
 const secondsFormatted = (time: number) => {
   const minutes = Math.floor(time / 60);
   const seconds = time - minutes * 60;
@@ -25,6 +23,8 @@ const SuccessScreen = () => {
 
   const [willExpire, setWillExpire] = useState(repo_exp);
  
+  const repoURL = window.location.protocol + '//' + window.location.host + '/repo/' + repo_uri;
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (willExpire > 0) {
@@ -44,7 +44,7 @@ const SuccessScreen = () => {
         <Text>Gitoboros has successfully copied all public contributions from <Text fontWeight="bold" fontFamily="monospace">{username}</Text> account. </Text>
         <Text>Please clone the following repo and open <Text fontWeight="bold" fontFamily="monospace">README</Text> file inside:</Text>
         <br /><br />
-        <Text fontWeight="bold" fontFamily="monospace">git clone {publicURL}/repo/{repo_uri}</Text>
+        <Text fontWeight="bold" fontFamily="monospace">git clone {repoURL}</Text>
         <br /><br />
         <Text>This link will expire in <Text fontWeight="bold" fontFamily="monospace">{secondsFormatted(willExpire)}</Text>.</Text>
       </Box>

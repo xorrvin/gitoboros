@@ -20,14 +20,11 @@ from logconfig import get_generic_logging_config, get_uvicorn_logging_config
 # create app
 app = FastAPI(lifespan=SessionLifespan)
 
-# setup CORS
+# setup CORS; wildcard here since proper
+# filtering will be done by nginx proxy
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://frontend",
-        "http://localhost:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -44,7 +41,7 @@ app.include_router(GitRouter)
 
 
 async def main_init():
-    port = int(os.environ.get("HTTP_PORT", 8080))
+    port = int(os.environ.get("HTTP_PORT", 8000))
     host = os.environ.get("HTTP_HOST", "localhost")
 
     # update generic logging config
@@ -52,7 +49,12 @@ async def main_init():
 
     # https://www.uvicorn.org/#config-and-server-instances
     config = uvicorn.Config(
-        "main:app", port=port, host=host, log_config=get_uvicorn_logging_config()
+        app=app,
+        port=port,
+        host=host,
+        proxy_headers=True,
+        #,
+        log_config=get_uvicorn_logging_config()
     )
     server = uvicorn.Server(config)
 
