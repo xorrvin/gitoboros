@@ -1,3 +1,8 @@
+"""
+Redis session management
+"""
+
+import os
 import uuid
 import base58
 import base64
@@ -27,15 +32,18 @@ SESSION_WAIT_TIMEOUT = 10
 
 logger = logging.getLogger(__name__)
 
+
 def encode_session_id(session_id: str):
     """
     Encode internal UUID-based session ID to base64 string
     """
 
+
 def decode_session_id(s) -> uuid.UUID:
     """
     Decode externally provided session ID to UUID
     """
+
 
 class SessionState(Enum):
     """
@@ -43,14 +51,17 @@ class SessionState(Enum):
     is set to opened state. After packfile is written, session
     is marked as closed.
     """
+
     opened = "SESSION_OPENED"
     closed = "SESSION_CLOSED"
+
 
 @dataclass
 class SessionData:
     """
     Represents particular session data. Will be stored as a hash in Redis
     """
+
     total_objects: int
     latest_object: str
     packfile: bytes
@@ -60,8 +71,10 @@ class SessionData:
     state: Optional[str] = None
     branch: Optional[str] = None
 
+
 class SessionError(Exception):
     pass
+
 
 class Session:
     redis = None
@@ -72,8 +85,13 @@ class Session:
         """
         Initializes Session object and stores Redis handle
         """
+        # ideally, for additional security, namespace should be
+        # provided externally and shared by all workers.
+        # SESSION_NAMESPACE=uuid.uuid4()
+        namespace = os.environ.get("SESSION_NAMESPACE", uuid.NAMESPACE_URL)
+
         self.redis = redis
-        self.namespace = uuid.NAMESPACE_URL #uuid.uuid4()
+        self.namespace = namespace
 
     def get_id(self) -> str:
         """
@@ -150,18 +168,20 @@ class Session:
         """
         Store data for this session as a Redis hash object
         """
-        await self.redis.hset(self.get_id(), mapping={
-            "total_objects": str(data.total_objects),
-            "latest_object": data.latest_object,
-
-            # since decode_responses is passed to Redis, it will
-            # try to decode packfile upon accessing session data
-            # and will fail, so resort to this. Another (faster)
-            # option is to pass decode_responses = False and
-            # store bytes directly, but it will require casting
-            # all other strings from bytes and vice versa.
-            "packfile": base64.b64encode(data.packfile),
-        })
+        await self.redis.hset(
+            self.get_id(),
+            mapping={
+                "total_objects": str(data.total_objects),
+                "latest_object": data.latest_object,
+                # since decode_responses is passed to Redis, it will
+                # try to decode packfile upon accessing session data
+                # and will fail, so resort to this. Another (faster)
+                # option is to pass decode_responses = False and
+                # store bytes directly, but it will require casting
+                # all other strings from bytes and vice versa.
+                "packfile": base64.b64encode(data.packfile),
+            },
+        )
 
     async def get_data(self):
         """
@@ -186,6 +206,7 @@ class RedisSessionStore:
     """
     Wrapper over Redis with extra logic for ID management
     """
+
     def __init__(self, *args, **kwargs):
         self.redis = None
 
@@ -193,7 +214,10 @@ class RedisSessionStore:
         """
         Initialize Redis connection
         """
-        self.redis = Redis(host='localhost', port=6379, decode_responses=True)
+        host = os.environ.get("REDIS_HOST", "localhost")
+        port = int(os.environ.get("REDIS_PORT", 6379))
+
+        self.redis = Redis(host=host, port=port, decode_responses=True)
 
         await self.redis.ping()
 
@@ -201,14 +225,13 @@ class RedisSessionStore:
         """
         Close Redis connection
         """
-
         await self.redis.aclose()
 
     async def create_session_from_data(self, handle: str, email: str, branch: str):
         """
         Creates unique Session object from user-provided data.
         """
-        session = Session(redis = self.redis)
+        session = Session(redis=self.redis)
 
         await session.make_from_data(handle, email, branch)
 
@@ -218,14 +241,16 @@ class RedisSessionStore:
         """
         Creates Session object from user-provided URI.
         """
-        session = Session(redis = self.redis)
+        session = Session(redis=self.redis)
 
         session.make_from_uri(uri)
 
         return session
 
+
 # Essentially a Singleton object, which will be managed by FastAPI
 SessionStore = RedisSessionStore()
+
 
 @asynccontextmanager
 async def SessionLifespan(app: FastAPI):

@@ -1,3 +1,7 @@
+"""
+GitHub contribution handling
+"""
+
 import re
 import aiohttp
 import asyncio
@@ -12,13 +16,16 @@ URLDATA = "https://github.com/users/{}/contributions?from={}&to={}"
 REGEX = re.compile(r"(\d{1,2}) contribution[s]? on ([A-Za-z]{3,12}) (\d{1,2})")
 MAX_CONTRIBS = 2**24
 
+
 class GitHubException(Exception):
     pass
+
 
 class GitHubUser:
     """
     Retrieves contribution info for a particular username
     """
+
     _username = None
 
     def __init__(self, username, *args, **kwargs):
@@ -32,7 +39,7 @@ class GitHubUser:
         async with self._session.get(URLINFO.format(self._username)) as resp:
             obj = await resp.json()
 
-            if resp.ok and resp.status == 200:                
+            if resp.ok and resp.status == 200:
                 dt = datetime.fromisoformat(obj["created_at"])
 
                 return dt.year
@@ -40,7 +47,7 @@ class GitHubUser:
                 if resp.status == 404:
                     raise GitHubException(f"User {self._username} does not exist")
 
-                raise GitHubException(f"Cannot get user info: {obj["message"]}")
+                raise GitHubException(f"Cannot get user info: {obj['message']}")
 
     async def build_ranges(self) -> list[tuple[int, str, str]]:
         """
@@ -125,7 +132,9 @@ class GitHubUser:
             contributions = functools.reduce(operator.iconcat, results, [])
 
             if len(contributions) == 0:
-                raise GitHubException(f"No public contributions found for {self._username}.")
+                raise GitHubException(
+                    f"No public contributions found for {self._username}."
+                )
 
             # not a real one, but good for RAM usage
             if len(contributions) > MAX_CONTRIBS:

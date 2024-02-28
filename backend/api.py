@@ -1,3 +1,7 @@
+"""
+Frontend-facing API implementation. Manages user sessions and validates input.
+"""
+
 import asyncio
 import logging
 
@@ -17,9 +21,11 @@ class MigrationRequest(BaseModel):
     Migration request. GitHub username and email are required.
     If branch name is not provided, it will be defaulted to "main".
     """
+
     email: EmailStr
     handle: str = Field(max_length=39, pattern=r"[A-Za-z0-9\-]")
     branch: str = Field(max_length=64, pattern=r"[0-9a-zA-Z-/\\\.]", default=None)
+
 
 class MigrationResponse(BaseModel):
     """
@@ -27,13 +33,16 @@ class MigrationResponse(BaseModel):
     session_id is a session ID, which represents new repo.
     session_ttl is time in seconds this repo will be available.
     """
+
     repo_id: str
     repo_ttl: int
+
 
 class RemoveSessionRequest(BaseModel):
     """
     Session deletion request
     """
+
     session_id: str
 
 
@@ -62,7 +71,9 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
         if valid_session:
             slogger.info("reusing existing session")
         elif opened_session:
-            slogger.info("session has been already opened, waiting for the completion...")
+            slogger.info(
+                "session has been already opened, waiting for the completion..."
+            )
 
             async with asyncio.timeout(SESSION_WAIT_TIMEOUT):
                 has_closed = False
@@ -104,7 +115,7 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
             data = SessionData(
                 total_objects=len(all_objects),
                 latest_object=repo.get_current(),
-                packfile=packfile
+                packfile=packfile,
             )
             await session.set_data(data)
 
@@ -126,12 +137,13 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
 
         raise GitoborosException(400, name, value)
 
+
 @MainAPIRouter.delete("/{repo_id}")
 def delete_migration_handler():
     pass
+
 
 # POST /start -> session_id
 
 # PUT /migrate/{session_id}
 # DELETE /migrate/{session_id}
-

@@ -2,6 +2,7 @@ redis
 base58
 aiohttp
 fastapi
+uvicorn
 beautifulsoup4
 email-validator
 starlette-context

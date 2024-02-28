@@ -27,17 +27,24 @@ from collections import namedtuple
 
 from typing import Sequence, AbstractSet
 
+DEFAULT_BRANCH = "main"
+DEFAULT_COMMIT_AUTHOR = "Gitoboros"
+
+
 class GitError(Exception):
     """
     Git operation error
     """
+
     pass
+
 
 class PktLine:
     """
     Encode/decode data according to pkt-line format.
     Reference: https://git-scm.com/docs/protocol-common
     """
+
     def write(self, data: bytes | str | None) -> bytes:
         """
         Write binary data as pkt-line
@@ -60,13 +67,13 @@ class PktLine:
         lines = []
         i = 0
         for _ in range(1000):
-            line_length = int(data[i:i + 4], 16)
-            line = data[i + 4:i + line_length]
+            line_length = int(data[i : i + 4], 16)
+            line = data[i + 4 : i + line_length]
 
             # don't append flush pkts
             if line != b"":
                 lines.append(line.decode("ascii").replace("\n", ""))
-            
+
             # flush pkt
             if line_length == 0:
                 i += 4
@@ -78,23 +85,27 @@ class PktLine:
 
         return lines
 
+
 class GitObjectType(Enum):
     """
     Supported git object types
     """
+
     commit = 1
     tree = 2
     blob = 3
+
 
 class GitObjectStore:
     """
     Git object storage and handling
     """
+
     _storepacked = False
     _objectsdata = {}
     _packeddata = {}
 
-    def __init__(self, store_packed = False):
+    def __init__(self, store_packed=False):
         """
         If store_packed is True, compute packed object version on each hashing.
         Final packfile creation will be much faster, but this will use more memory.
@@ -124,15 +135,16 @@ class GitObjectStore:
         """
         if sha1 not in self._objectsdata:
             raise GitError("unknown object requested")
-    
+
         full_data = zlib.decompress(self._objectsdata[sha1])
-        nul_index = full_data.index(b'\x00')
+        nul_index = full_data.index(b"\x00")
         header = full_data[:nul_index]
         obj_type, size_str = header.decode().split()
         size = int(size_str)
-        data = full_data[nul_index + 1:]
-        assert size == len(data), 'expected size {}, got {} bytes'.format(
-                size, len(data))
+        data = full_data[nul_index + 1 :]
+        assert size == len(data), "expected size {}, got {} bytes".format(
+            size, len(data)
+        )
 
         return (obj_type, data)
 
@@ -142,13 +154,13 @@ class GitObjectStore:
         """
         type_num = GitObjectType[obj_type].value
         size = len(obj_data)
-        byte = (type_num << 4) | (size & 0x0f)
+        byte = (type_num << 4) | (size & 0x0F)
         size >>= 4
         header = []
 
         while size:
             header.append(byte | 0x80)
-            byte = size & 0x7f
+            byte = size & 0x7F
             size >>= 7
         header.append(byte)
 
@@ -193,6 +205,7 @@ class GitObjectStore:
 
         return data
 
+
 # data for one entry in the git index (.git/index)
 GitIndexEntry = namedtuple(
     "IndexEntry",
@@ -213,10 +226,12 @@ GitIndexEntry = namedtuple(
     ],
 )
 
+
 class GitIndex:
     """
     Index storage and handler
     """
+
     _indexdata = b""
 
     def read(self) -> list[GitIndexEntry]:
@@ -289,10 +304,12 @@ class GitIndex:
         digest = hashlib.sha1(all_data).digest()
         self._indexdata = all_data + digest
 
+
 class GitRepo:
     """
     Main class which represents git repository in memory
     """
+
     # current HEAD commit
     _current = None
     _objects = None
@@ -343,7 +360,7 @@ class GitRepo:
 
     def add_binary(self, path: str, data: bytes, timestamp: int | None = None):
         """
-        Add a file (blob) to the repo, only same directory is supported        
+        Add a file (blob) to the repo, only same directory is supported
         """
         if timestamp is None:
             timestamp = int(time.time())
@@ -385,7 +402,9 @@ class GitRepo:
         entries.sort(key=operator.attrgetter("path"))
         self._index.write(entries)
 
-    def do_commit(self, author: str, email: str, message: str, timestamp: int | None = None) -> str:
+    def do_commit(
+        self, author: str, email: str, message: str, timestamp: int | None = None
+    ) -> str:
         """
         Create a commit with a given data and return its hash. Unfortunately some
         clients cannot parse anything but internal git format, so UNIX timestamp is expected.
