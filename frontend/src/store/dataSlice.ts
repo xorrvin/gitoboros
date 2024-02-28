@@ -16,6 +16,9 @@ interface DataState {
   isSuccess: boolean;
   isLoading: boolean;
 
+  /* fake API state to indicate user their session is no longer valid */
+  isExpired: boolean;
+
   /* API error values */
   error : {
     name: string;
@@ -36,6 +39,7 @@ const initialState: DataState = {
 
   isLoading: false,
   isSuccess: false,
+  isExpired: false,
   isError: false,
 
   error: null,
@@ -80,6 +84,15 @@ export const dataSlice = createSlice({
       state.repo = null;
       state.error = null;
     },
+    setExpired: (state) => {
+      state.isError = true;
+      state.isExpired = true;
+
+      state.error = {
+        name: "Expired!",
+        info: "Your session has expired.",
+      }
+    },
     abortMigrationRequest: (state) => {
       abortController.abort();
     }
@@ -112,7 +125,7 @@ export const dataSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setHandle, setEmail, setReady, abortMigrationRequest } = dataSlice.actions
+export const { setHandle, setEmail, setReady, setExpired, abortMigrationRequest } = dataSlice.actions
 export { issueMigrationRequest }
 
 export default dataSlice.reducer
