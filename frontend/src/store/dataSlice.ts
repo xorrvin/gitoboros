@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
-import { defaultHandle, defaultEmail } from '../consts';
+import { defaultHandle, defaultEmail, defaultBranch } from '../consts';
 
 import { submitMigrationRequest, MigrationSuccessResponse, MigrationErrorResponse } from '../api';
 import { RootState } from '.';
@@ -58,6 +58,7 @@ const issueMigrationRequest = createAsyncThunk
     const result = await submitMigrationRequest(
       state.data.handle,
       state.data.email,
+      state.data.branch,
       abortController.signal
     ).catch((err) => {
       return rejectWithValue(err);
@@ -76,6 +77,9 @@ export const dataSlice = createSlice({
     },
     setEmail: (state, action) => {
       state.email = action.payload
+    },
+    setBranch: (state, action) => {
+      state.branch = action.payload
     },
     setReady: (state) => {
       state.isError = false;
@@ -126,7 +130,7 @@ export const dataSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setHandle, setEmail, setReady, setExpired, abortMigrationRequest } = dataSlice.actions
+export const { setHandle, setEmail, setBranch, setReady, setExpired, abortMigrationRequest } = dataSlice.actions
 export { issueMigrationRequest }
 
 export default dataSlice.reducer

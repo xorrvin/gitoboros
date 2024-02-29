@@ -5,12 +5,12 @@ import ValidatedField from './ValidatedField';
 
 import { useAppDispatch, useAppSelector } from '../../store';
 import { allowNext } from '../../store/navSlice';
-import { setHandle, setEmail, setReady } from '../../store/dataSlice';
+import { setHandle, setEmail, setBranch, setReady } from '../../store/dataSlice';
 import { PageTypes } from '.';
 
 import * as EmailValidator from 'email-validator';
 
-import { defaultHandle, defaultEmail } from '../../consts';
+import { defaultHandle, defaultEmail, defaultBranch } from '../../consts';
 
 const FormPage = () => {
   const dispatch = useAppDispatch()
@@ -19,14 +19,19 @@ const FormPage = () => {
 
   const currentHandle = useAppSelector((state) => state.data.handle);
   const currentEmail = useAppSelector((state) => state.data.email);
+  const currentBranch = useAppSelector((state) => state.data.branch);
 
   const [handleValue, setHandleValue] = useState(currentHandle)
   const [isHandleValid, setIsHandleValid] = useState(true);
   const [handleValidationResult, setHandleValidationResult] = useState("")
 
   const [emailValue, setEmailValue] = useState(currentEmail)
-  const [isEmailValid, setIsEmailValid] = useState(true);  
+  const [isEmailValid, setIsEmailValid] = useState(true);
   const [emailValidationResult, setEmailValidationResult] = useState("")
+
+  const [branchValue, setBranchValue] = useState("")
+  const [isBranchValid, setIsBranchValid] = useState(true);  
+  const [branchValidationResult, setBranchValidationResult] = useState("")
 
   /* Validate inputs */
   useEffect(() => {
@@ -50,15 +55,35 @@ const FormPage = () => {
         setIsEmailValid(true);
         setEmailValidationResult("")
       }
-  }, [handleValue, emailValue])
+
+      /* empty branch is okay */
+      if (branchValue === "") {
+        setIsBranchValid(true)
+        setBranchValidationResult("")
+      } else {
+          if (! /^[0-9a-zA-Z-.\\/]{0,64}$/ig.test(branchValue)) {
+            setIsBranchValid(false)
+            setBranchValidationResult("Invalid git branch name")
+          } else {
+            setIsBranchValid(true)
+            setBranchValidationResult("")
+          }
+      }
+  }, [handleValue, emailValue, branchValue])
 
   /* lock form if needed */
   useEffect(() => {
     if (inFocus) {
-      if (isHandleValid && isEmailValid) {
+      if (isHandleValid && isEmailValid && isBranchValid) {
         /* fill required data */
         dispatch(setHandle(handleValue));
         dispatch(setEmail(emailValue));
+
+        if (branchValue === "") {
+          dispatch(setBranch(defaultBranch));
+        } else {
+          dispatch(setBranch(branchValue));
+        }
 
         /* ready for API request */
         dispatch(setReady());
@@ -69,7 +94,7 @@ const FormPage = () => {
         dispatch(allowNext(false));
       }
     }
-  }, [dispatch, emailValue, handleValue, inFocus, isEmailValid, isHandleValid]);
+  }, [branchValue, dispatch, emailValue, handleValue, inFocus, isBranchValid, isEmailValid, isHandleValid]);
 
   return (
     <Box>
@@ -85,8 +110,7 @@ const FormPage = () => {
           defaultValue={defaultHandle}
           caption=
           {<>
-            <Text>Target GitHub account to migrate from. For example <Token text="octocat" /> or <Token text="torvalds" /></Text>
-            <Text><br />Note: only <Text fontWeight={"bold"}>public</Text> accounts can be migrated.</Text>
+            <Text>Public GitHub account to migrate from. For example <Token text="octocat" /> or <Token text="torvalds" /></Text>
           </>
           }
         />
@@ -100,8 +124,20 @@ const FormPage = () => {
           defaultValue={defaultEmail}
           caption=
           {<>
-            <Text>GitHub email which you use for your commits. You can also use  <Token text="@users.noreply.github.com" /> private email issued by GitHub.</Text>
+            <Text>GitHub email to use for contribution commits. You can also use  <Token text="@users.noreply.github.com" /> private email issued by GitHub.</Text>
             <Text> For that, you need to enable email privacy protection, as mentioned <Link href="https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address" target="_blank">here</Link>.</Text>
+          </>}
+        />
+        <ValidatedField
+          valid={isBranchValid}
+          validationResult={branchValidationResult}
+          label="Git branch"
+          onChange={(value) => setBranchValue(value)}
+          initialValue={currentBranch}
+          defaultValue={defaultBranch}
+          caption=
+          {<>
+            <Text>This is the branch name all migrated contributions will be committed to. If not filled, will default to <Token text="main" />.</Text>
           </>}
         />
       </Box>

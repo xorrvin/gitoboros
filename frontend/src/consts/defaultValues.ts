@@ -1,4 +1,5 @@
 const defaultHandle = "octocat";
-const defaultEmail = "octocat@nowhere.com"
+const defaultEmail = "octocat@nowhere.com";
+const defaultBranch = "main";
 
-export { defaultHandle, defaultEmail };
+export { defaultHandle, defaultEmail, defaultBranch };
