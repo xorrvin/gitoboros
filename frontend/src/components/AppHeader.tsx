@@ -1,5 +1,4 @@
 import { Header, Octicon } from '@primer/react';
-import { IssueReopenedIcon } from '@primer/octicons-react'
 import { GiOuroboros } from "react-icons/gi";
 import ColorModeSwitcher from './ColorModeSwitcher';
 
