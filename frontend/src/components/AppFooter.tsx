@@ -3,6 +3,34 @@ import { MarkGithubIcon, LockIcon } from '@primer/octicons-react'
 import { Box, Text, Link, Octicon } from '@primer/react';
 import { Dialog } from '@primer/react/drafts';
 
+const PrivacyPolicy = () => {
+  return (
+    <Box p={2}>
+      <Text as="p">
+        All information you enter to the form is never saved
+        to the disk or printed to the log; resulting git repo
+        is cached in RAM (Redis) without any persistence and is
+        deleted after 5 mins.
+      </Text><br />
+      <Text as="p">
+        HTTP info like useragent of your browser, your public IP
+        address and other information your browser sends with every
+        request is saved to the nginx log for debug reasons only and
+        is discarded daily.
+      </Text><br />
+      <Text as="p">
+        Additionally, this is hosted on Cloudflare and they might log
+        your location and other request info, especially if you're trying
+        to DDoS this website.
+      </Text><br />
+      <Text as="p">
+        In any case, you're more than welcome to run this locally on your
+        machine using instructions in the git repo.
+      </Text>
+    </Box>
+  )
+}
+
 const AppFooter = () => {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -35,10 +63,14 @@ const AppFooter = () => {
         <Octicon icon={MarkGithubIcon} /><Text as="small"> xorrvin/gitoboros</Text>
       </Link>
       { isOpen && <Dialog 
-          title={<Text fontWeight="bold" fontSize={36}>Privacy Policy</Text>}
+          title={
+          <Box p={2}>
+            <Text fontWeight="bold" fontSize={36}>Privacy Policy</Text>
+          </Box>
+          }
           onClose={() => setIsOpen(false)}
           >
-            <Text>privacy policy</Text>
+            <PrivacyPolicy />
         </Dialog> }
     </Box>
   );
