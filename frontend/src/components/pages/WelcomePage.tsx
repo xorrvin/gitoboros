@@ -24,7 +24,7 @@ const WelcomePage = (props: WelcomePageProps) => {
   return (
     <Box textAlign="left">
       <Heading>Welcome!</Heading>
-      <Text>Here you can easily migrate any <Text fontWeight={"bold"}>public</Text> GitHub account activity to the new account.</Text>
+      <Text>Here you can easily migrate any public GitHub account activity to the new account.</Text>
       <Text><br /><br /></Text>
       <Heading>How does it work?</Heading>
       <Text>

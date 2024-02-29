@@ -11,6 +11,7 @@ type AxiosErrorType = {
 type MigrationRequest = {
   handle: string;
   email: string;
+  branch: string;
 };
 
 /* response which's returned by this method */
@@ -41,12 +42,13 @@ type APIUnformattedError = {
   detail: string;
 }
 
-async function submitMigrationRequest(handle: string, email: string, signal: AbortSignal):
+async function submitMigrationRequest(handle: string, email: string, branch: string, signal: AbortSignal):
   Promise<MigrationSuccessResponse> {
     return new Promise(async (resolve, reject) => {
       const request: MigrationRequest = {
         handle: handle,
         email: email,
+        branch: branch,
       }
 
       try {
