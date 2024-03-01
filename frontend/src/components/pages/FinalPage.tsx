@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import { Box, Text, Spinner, Octicon, Heading } from '@primer/react'
-import { ClockIcon, AlertIcon } from '@primer/octicons-react'
+import { Box, Text, Spinner, Octicon, Heading, Button, Token } from '@primer/react';
+
+import { ClockIcon, AlertIcon, CopyIcon } from '@primer/octicons-react';
 
 import { useAppSelector, useAppDispatch } from '../../store';
 import { issueMigrationRequest, setExpired } from '../../store/dataSlice';
@@ -14,6 +15,36 @@ const secondsFormatted = (time: number) => {
   return String(minutes).padStart(1, '0') + ":" + String(seconds).padStart(2, "0");
 };
 
+const fallbackCopyTextToClipboard = (text: string) => {
+  let result = false;
+  let textArea = document.createElement("textarea");
+  textArea.value = text;
+
+  // Avoid scrolling to bottom
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.position = "fixed";
+  textArea.style.display = "none";
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+      if(document.execCommand('copy')) {
+        result = true;
+      }
+  } catch (err) {
+      console.error('unable to copy to clipboard', err);
+
+      return false;
+  }
+
+  document.body.removeChild(textArea);
+
+  return result;
+}
+
 const SuccessScreen = () => {
   const dispatch = useAppDispatch();
 
@@ -22,7 +53,8 @@ const SuccessScreen = () => {
   const repo_exp = useAppSelector((state) => state.data.repo?.expires) as number;
 
   const [willExpire, setWillExpire] = useState(repo_exp);
- 
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
   const repoURL = window.location.protocol + '//' + window.location.host + '/repo/' + repo_uri;
 
   useEffect(() => {
@@ -37,16 +69,67 @@ const SuccessScreen = () => {
     return () => clearInterval(interval);
   }, [dispatch, willExpire]);
 
+  const displayTooltip = () => {
+    setIsTooltipVisible(true);
+
+    setTimeout(() => setIsTooltipVisible(false), 900);
+  }
+
+  const copyCloneCommand = () => {
+    const command = "git clone " + repoURL;
+
+    if (!navigator.clipboard) {
+      const fallbackResult = fallbackCopyTextToClipboard(command);
+
+      if (fallbackResult) {
+        displayTooltip();
+      }
+    } else {
+      navigator.clipboard.writeText(command).then(function() {
+        displayTooltip();
+    }, function(err) {
+        console.error('could not copy text: ', err);
+    });
+    }
+
+
+  }
+
   return (
     <Box sx={{ display: "flex", alignItems: "flex-start", width: "100%" }}>
-      <Box sx={{ alignSelf: 'center', textAlign: 'center', width: '100%' }}>
+      <Box sx={{ alignSelf: 'center', textAlign: 'center', width: '100%', position: "relative" }}>
         <Heading>Ready!</Heading>
-        <Text>Gitoboros has successfully copied all public contributions from <Text fontWeight="bold" fontFamily="monospace">{username}</Text> account. </Text>
-        <Text>Please clone the following repo and open <Text fontWeight="bold" fontFamily="monospace">README</Text> file inside:</Text>
+        <Text>Gitoboros has successfully copied all public contributions from <Text fontWeight="bold">{username}</Text> account. </Text>
+        <Text>Please clone the following repo and open <Text fontWeight="bold">README</Text> file inside:</Text>
         <br /><br />
-        <Text fontWeight="bold" fontFamily="monospace">git clone {repoURL}</Text>
+          <Token size="large" sx={{ borderRadius: 6, padding: 4 }} text={
+            <Box sx={{ display: "flex" }}>
+              <Box sx={{ paddingTop: '7px' }}>
+                <Text fontWeight="bold" fontFamily="monospace" sx={{ fontSize: 2 }}>
+                  git clone {repoURL}
+                </Text>
+              </Box>
+              <Box>
+                <Button sx={{ display: "inline-block" }} variant="invisible" onClick={() => copyCloneCommand()} trailingVisual={CopyIcon}></Button>
+              </Box>
+            </Box>
+          } />
+          { isTooltipVisible && 
+            <Box sx={{
+              right: 0,
+              position: "absolute",
+              animation: "fadeOut 1s",
+            }}><Text as="small" color='fg.muted'>copied!</Text></Box>
+          }
         <br /><br />
-        <Text>This link will expire in <Text fontWeight="bold" fontFamily="monospace">{secondsFormatted(willExpire)}</Text>.</Text>
+        <Box sx={{ display: "flex", justifyContent: "space-between", width: "30%", margin: "0 auto" }}>
+          <Box>
+            <Text>This link will expire in:</Text>
+          </Box>
+          <Box>
+            <Text fontWeight="bold">{secondsFormatted(willExpire)}</Text>
+          </Box>
+        </Box>
       </Box>
     </Box>
   )

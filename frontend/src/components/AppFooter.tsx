@@ -19,13 +19,12 @@ const PrivacyPolicy = () => {
         is discarded daily.
       </Text><br />
       <Text as="p">
-        Additionally, this is hosted on Cloudflare and they might log
-        your location and other request info, especially if you're trying
-        to DDoS this website.
+        Current deployment is using Cloudflare for DDoS protection and they
+        also might log your browser info, especially if you start doing bad things.
       </Text><br />
       <Text as="p">
         In any case, you're more than welcome to run this locally on your
-        machine using instructions in the git repo.
+        machine using Docker Compose file in the git repo :)
       </Text>
     </Box>
   )

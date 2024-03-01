@@ -13,6 +13,8 @@ import * as EmailValidator from 'email-validator';
 
 import { defaultHandle, defaultEmail, defaultBranch } from '../../consts';
 
+const hrefEmailPrivacyProtection = "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address";
+
 const FormPage = () => {
   const dispatch = useAppDispatch()
 
@@ -126,7 +128,7 @@ const FormPage = () => {
           defaultValue={defaultHandle}
           caption=
           {<>
-            <Text>Public GitHub account to migrate from. For example <Token text="octocat" /> or <Token text="torvalds" /></Text>
+            <Text>Public GitHub account to migrate from. For example <Text fontWeight="bold">octocat</Text> or <Text fontWeight="bold">torvalds</Text>.</Text>
           </>
           }
         />
@@ -141,8 +143,8 @@ const FormPage = () => {
           defaultValue={defaultEmail}
           caption=
           {<>
-            <Text>GitHub email to use for contribution commits. You can also use  <Token text="@users.noreply.github.com" /> private email issued by GitHub.</Text>
-            <Text> For that, you need to enable email privacy protection, as mentioned <Link href="https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address" target="_blank">here</Link>.</Text>
+            <Text>GitHub email to use for contribution commits. You can also use  <Text fontWeight="bold">@users.noreply.github.com</Text> private email issued by GitHub.</Text>
+            <Text> For that, you need to <Link href={hrefEmailPrivacyProtection} target="_blank">enable</Link> email privacy protection.</Text>
           </>}
         />
         <ValidatedField
@@ -155,7 +157,7 @@ const FormPage = () => {
           defaultValue={defaultBranch}
           caption=
           {<>
-            <Text>This is the branch name all migrated contributions will be committed to. If not filled, will default to <Token text="main" />.</Text>
+            <Text>This is the branch name all migrated contributions will be committed to. If not filled, will default to <Text fontWeight="bold">main</Text>.</Text>
           </>}
         />
       </Box>

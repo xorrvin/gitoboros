@@ -8,8 +8,8 @@ interface WelcomePageProps extends GenericPageProps {
 const WelcomePage = (props: WelcomePageProps) => {
   const { canGoPrev, canGoNext } = props;
 
-  const HrefSigningYourCommits = "https://withblue.ink/2020/05/17/how-and-why-to-sign-git-commits.html"
-  const HrefGitHubContributions = "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/why-are-my-contributions-not-showing-up-on-my-profile"
+  const hrefSigningYourCommits = "https://withblue.ink/2020/05/17/how-and-why-to-sign-git-commits.html"
+  const hrefGitHubContributions = "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/why-are-my-contributions-not-showing-up-on-my-profile"
 
   /* this page can be navigated away from (next) */
   if (canGoNext instanceof Function) {
@@ -38,9 +38,9 @@ const WelcomePage = (props: WelcomePageProps) => {
       <Text>
         No. That's precisely how git was designed: only name and email are needed
         to identify a contributor. For GitHub, commit with a specific email
-        <Text> <Link target="_blank" href={HrefGitHubContributions}>counts as a contribution</Link>. </Text>
+        <Text> <Link target="_blank" href={hrefGitHubContributions}>counts as a contribution</Link>. </Text>
         If you're concerned about proving authenticity of your work,
-        you may want <Text>to start <Link target="_blank" href={HrefSigningYourCommits}>signing your commits</Link>.</Text>
+        you may want <Text>to start <Link target="_blank" href={hrefSigningYourCommits}>signing your commits</Link>.</Text>
       </Text>
       <Text><br /><br /></Text>
     </Box>
