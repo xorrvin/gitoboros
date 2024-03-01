@@ -1,4 +1,4 @@
-import { Box, Link, Text, Token, Heading } from '@primer/react'
+import { Box, Link, Text, Heading } from '@primer/react'
 import { useCallback, useEffect, useState } from 'react';
 
 import ValidatedField from './ValidatedField';

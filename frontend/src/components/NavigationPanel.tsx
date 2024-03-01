@@ -23,25 +23,24 @@ const NavigationPanel = (props: NavigationPanelProps) => {
       borderStyle: 'solid',
       borderWidth: 1,
       borderColor: 'border.subtle',
+      backgroundColor: "neutral",
       borderRadius: 6,
       p: 4,
       display: "flex",
       alignSelf: "center"
     }}>
       <Box sx={{
-        //border: '5px solid yellow',
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         flexGrow: 1,
       }}>
         <Box sx={{
-          //border: '5px solid red',
           display: "flex",
           flexGrow: 1,
         }}>{children}</Box>
 
-      <Box sx={{ /* border: '5px solid green', */ justifySelf: "flex-end", width: "100%" }}>
+      <Box sx={{ justifySelf: "flex-end", width: "100%" }}>
         <Box sx={{ display: 'flex', textAlign: 'center', justifyContent: "space-between", width: '100%' }}>
           <Box sx={{ width: '33%' }}>
             {currentStep !== 0 &&

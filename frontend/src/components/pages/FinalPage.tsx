@@ -99,35 +99,43 @@ const SuccessScreen = () => {
     <Box sx={{ display: "flex", alignItems: "flex-start", width: "100%" }}>
       <Box sx={{ alignSelf: 'center', textAlign: 'center', width: '100%', position: "relative" }}>
         <Heading>Ready!</Heading>
+        <br />
         <Text>Gitoboros has successfully copied all public contributions from <Text fontWeight="bold">{username}</Text> account. </Text>
-        <Text>Please clone the following repo and open <Text fontWeight="bold">README</Text> file inside:</Text>
+        <Text>Please clone the following repo and open <Text fontWeight="bold">README.md</Text> inside:</Text>
         <br /><br />
-          <Token size="large" sx={{ borderRadius: 6, padding: 4 }} text={
-            <Box sx={{ display: "flex" }}>
-              <Box sx={{ paddingTop: '7px' }}>
-                <Text fontWeight="bold" fontFamily="monospace" sx={{ fontSize: 2 }}>
-                  git clone {repoURL}
-                </Text>
-              </Box>
-              <Box>
-                <Button sx={{ display: "inline-block" }} variant="invisible" onClick={() => copyCloneCommand()} trailingVisual={CopyIcon}></Button>
-              </Box>
-            </Box>
-          } />
-          { isTooltipVisible && 
-            <Box sx={{
-              right: 0,
-              position: "absolute",
-              animation: "fadeOut 1s",
-            }}><Text as="small" color='fg.muted'>copied!</Text></Box>
-          }
+        <Box sx={{
+          display: "flex",
+          borderColor: "border.subtle",
+          borderStyle: "solid",
+          borderWidth: "1px",
+          borderRadius: "10px",
+          padding: "8px",
+          backgroundColor: "neutral.subtle",
+          color: "fg.muted",
+          justifyContent: "center" }}>
+          <Box sx={{ paddingTop: '4px' }}>
+            <Text fontWeight="bold" fontFamily="monospace" sx={{ fontSize: 2 }}>
+              git clone {repoURL}
+            </Text>
+          </Box>
+          <Box marginLeft={1}>
+            <Button sx={{ display: "inline-block", color: "fg.muted" }} variant="invisible" onClick={() => copyCloneCommand()} trailingVisual={CopyIcon}></Button>
+          </Box>
+        </Box>
+        { isTooltipVisible &&
+          <Box sx={{
+            right: 0,
+            position: "absolute",
+            animation: "fadeOut 1s",
+          }}><Text as="small" color='fg.muted'>copied!</Text></Box>
+        }
         <br /><br />
-        <Box sx={{ display: "flex", justifyContent: "space-between", width: "30%", margin: "0 auto" }}>
-          <Box>
+        <Box sx={{ display: "flex", justifyContent: "center", margin: "0 auto" }}>
+          <Box paddingRight={2}>
             <Text>This link will expire in:</Text>
           </Box>
-          <Box>
-            <Text fontWeight="bold">{secondsFormatted(willExpire)}</Text>
+          <Box paddingLeft={2}>
+            <Text fontWeight="bold" fontFamily="monospace" fontSize={2}>{secondsFormatted(willExpire)}</Text>
           </Box>
         </Box>
       </Box>
