@@ -48,9 +48,11 @@ class RemoveSessionRequest(BaseModel):
 
 MainAPIRouter = APIRouter(prefix="/api")
 
+
 @MainAPIRouter.get("/hello")
 def read_main(request: Request):
     return {"message": "Hello World", "root_path": request.scope.get("root_path")}
+
 
 @MainAPIRouter.post("/migrate")
 async def start_migration_handler(migration: MigrationRequest) -> MigrationResponse:

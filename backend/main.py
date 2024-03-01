@@ -53,8 +53,7 @@ async def main_init():
         port=port,
         host=host,
         proxy_headers=True,
-        #,
-        log_config=get_uvicorn_logging_config()
+        log_config=get_uvicorn_logging_config(),
     )
     server = uvicorn.Server(config)
 

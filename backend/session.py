@@ -25,24 +25,21 @@ SESSION_ID_LENGTH = 22
 # each session is active for 5 minutes
 SESSION_EXPIRY_TIME = 60 * 5
 
+# it may happen that session is requested in the last
+# seconds of its existence. if that's inside git handler,
+# it can crash in the middle of it, as discovery phase will
+# still have valid session and subsequent pack retrieval won't
+# be able to look it up;
+# as a solution, forcefully expire session some time
+# before its actual expiration.
+SESSION_EXPIRY_SAFEGUARD = 3
+
 # when parallel session has been already opened,
 # wait AT MOST this time in seconds for
 # its completion
 SESSION_WAIT_TIMEOUT = 10
 
 logger = logging.getLogger(__name__)
-
-
-def encode_session_id(session_id: str):
-    """
-    Encode internal UUID-based session ID to base64 string
-    """
-
-
-def decode_session_id(s) -> uuid.UUID:
-    """
-    Decode externally provided session ID to UUID
-    """
 
 
 class SessionState(Enum):
@@ -155,8 +152,18 @@ class Session:
         Checks whether session already exists and is valid (closed)
         """
         state = await self.redis.hget(self.get_id(), "state")
+        is_closed = state == SessionState.closed.value
+        about_to_expire = False
 
-        return state == SessionState.closed.value
+        # determine if the session is about to expire. if it is, better
+        # to mark it as invalid so it would be safely recreated and extended.
+        ttl = await self.redis.ttl(self.get_id())
+        ttl = int(ttl)
+
+        if ttl != -1:
+            about_to_expire = ttl < SESSION_EXPIRY_SAFEGUARD
+
+        return is_closed and not about_to_expire
 
     async def extend(self):
         """
