@@ -11,8 +11,6 @@ services:
     - HTTP_HOST=backend
     - HTTP_PORT=8000
     - REDIS_HOST=redis
-    ports:
-    - 8000:8000
     cpu_count: 1
     networks:
     - gitoboros-network
@@ -26,8 +24,6 @@ services:
     restart: unless-stopped
     volumes:
     - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
-    ports:
-    - 8080:8080
     networks:
     - gitoboros-network
 
@@ -43,18 +39,15 @@ services:
     networks:
     - gitoboros-network
 
-
-    
-  # uncomment for cloudflare deployment
-  #tunnel:
-  #  container_name: tunnel
-  #  image: cloudflare/cloudflared
-  #  restart: unless-stopped
-  #  command: tunnel --no-autoupdate run
-  #  networks:
-  #  - gitoboros-network
-  #  environment:
-  #  - TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
+  tunnel:
+    container_name: tunnel
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    networks:
+    - gitoboros-network
+    environment:
+    - TUNNEL_TOKEN=$CLOUDFLARE_TUNNEL_TOKEN
 
 networks:
   gitoboros-network:

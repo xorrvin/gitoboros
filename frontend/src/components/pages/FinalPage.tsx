@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Box, Text, Spinner, Octicon, Heading, Button, Token } from '@primer/react';
+import { Box, Text, Spinner, Octicon, Heading, Button } from '@primer/react';
 
 import { ClockIcon, AlertIcon, CopyIcon } from '@primer/octicons-react';
 
