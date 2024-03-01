@@ -1,11 +1,12 @@
 import { Box, Link, Text, Token, Heading } from '@primer/react'
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import ValidatedField from './ValidatedField';
 
 import { useAppDispatch, useAppSelector } from '../../store';
 import { allowNext } from '../../store/navSlice';
 import { setHandle, setEmail, setBranch, setReady } from '../../store/dataSlice';
+import { goNext } from '../../store/navSlice';
 import { PageTypes } from '.';
 
 import * as EmailValidator from 'email-validator';
@@ -71,22 +72,36 @@ const FormPage = () => {
       }
   }, [handleValue, emailValue, branchValue])
 
+  /* form is valid and ready */
+  const setFormReady = useCallback(() => {
+      /* fill required data */
+      dispatch(setHandle(handleValue));
+      dispatch(setEmail(emailValue));
+
+      if (branchValue === "") {
+        dispatch(setBranch(defaultBranch));
+      } else {
+        dispatch(setBranch(branchValue));
+      }
+
+      /* ready for API request */
+      dispatch(setReady());
+  }, [branchValue, dispatch, emailValue, handleValue]);
+
+  /* submit by pressing Enter when fields are valid */
+  const submitFromField = () => {
+    if (isHandleValid && isEmailValid && isBranchValid) {
+      /* by this point, useEffect would already execute,  */
+      /* so form data is already saved                    */
+      dispatch(goNext())
+    }
+  }
+
   /* lock form if needed */
   useEffect(() => {
     if (inFocus) {
       if (isHandleValid && isEmailValid && isBranchValid) {
-        /* fill required data */
-        dispatch(setHandle(handleValue));
-        dispatch(setEmail(emailValue));
-
-        if (branchValue === "") {
-          dispatch(setBranch(defaultBranch));
-        } else {
-          dispatch(setBranch(branchValue));
-        }
-
-        /* ready for API request */
-        dispatch(setReady());
+        setFormReady();
 
         /* unblock Next button */
         dispatch(allowNext(true));
@@ -94,7 +109,7 @@ const FormPage = () => {
         dispatch(allowNext(false));
       }
     }
-  }, [branchValue, dispatch, emailValue, handleValue, inFocus, isBranchValid, isEmailValid, isHandleValid]);
+  }, [branchValue, dispatch, emailValue, handleValue, inFocus, isBranchValid, isEmailValid, isHandleValid, setFormReady]);
 
   return (
     <Box>
@@ -102,6 +117,7 @@ const FormPage = () => {
       <Box display="grid" gap={5}>
         <ValidatedField
           required
+          onSubmit={() => submitFromField()}
           valid={isHandleValid}
           validationResult={handleValidationResult}
           label="GitHub username"
@@ -116,6 +132,7 @@ const FormPage = () => {
         />
         <ValidatedField
           required
+          onSubmit={() => submitFromField()}
           valid={isEmailValid}
           validationResult={emailValidationResult}
           label="Your email"
@@ -129,6 +146,7 @@ const FormPage = () => {
           </>}
         />
         <ValidatedField
+          onSubmit={() => submitFromField()}
           valid={isBranchValid}
           validationResult={branchValidationResult}
           label="Git branch"

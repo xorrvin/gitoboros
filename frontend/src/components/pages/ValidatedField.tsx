@@ -17,10 +17,11 @@ interface ValidatedFieldProps {
   validationResult: string;
 
   onChange: (value: string) => void;
+  onSubmit: () => void;
 };
 
 const ValidatedField = (props: ValidatedFieldProps) => {
-  const { required, label, caption, defaultValue, valid, initialValue, validationResult, onChange } = props;
+  const { required, label, caption, defaultValue, valid, initialValue, validationResult, onChange, onSubmit } = props;
   const [fieldValue, setFieldValue] = useState(initialValue)
 
   const handleValueChange = (e: any) => {
@@ -30,10 +31,16 @@ const ValidatedField = (props: ValidatedFieldProps) => {
     onChange(value);
   }
 
+  const handleKeyDown = (key: any) => {
+    if (key.code === "Enter" && valid) {
+      onSubmit();
+    }
+  }
+
   return (
     <FormControl required={required ? true : false} sx={{ marginBottom: 5 }}>
       <FormControl.Label>{label}</FormControl.Label>
-      <TextInput maxLength={64} block placeholder={defaultValue} value={fieldValue} onChange={handleValueChange} />
+      <TextInput maxLength={64} block placeholder={defaultValue} value={fieldValue} onChange={handleValueChange} onKeyDown={handleKeyDown} />
       {!valid && (
         <FormControl.Validation variant="error">{validationResult}</FormControl.Validation>
       )}
