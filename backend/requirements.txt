@@ -1,5 +1,6 @@
 redis
 base58
+jinja2
 aiohttp
 fastapi
 uvicorn

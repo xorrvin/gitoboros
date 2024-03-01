@@ -2,10 +2,13 @@ import logging
 
 from typing import Annotated
 
+from jinja2 import Template
 from fastapi import Path, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 from session import SessionStore, SessionError, SESSION_ID_LENGTH
+
+TEMPLATE_NAME = "readme.md.jinja2"
 
 
 class GitoborosException(HTTPException):
@@ -52,3 +55,10 @@ async def verify_repo_id(
     if not valid:
         logger.error(f"no such repo: {repo_id}")
         raise HTTPException(404)
+
+
+def render_readme(account, branch):
+    with open(TEMPLATE_NAME) as file:
+        template = Template(file.read())
+
+    return template.render(account=account, branch=branch).encode("ascii")

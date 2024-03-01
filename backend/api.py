@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field, EmailStr
 
 from git import GitRepo, DEFAULT_BRANCH, DEFAULT_COMMIT_AUTHOR
-from utils import GitoborosException
+from utils import GitoborosException, render_readme
 from contribs import GitHubUser
 from session import SessionStore, SessionData, SESSION_EXPIRY_TIME, SESSION_WAIT_TIMEOUT
 
@@ -36,14 +36,6 @@ class MigrationResponse(BaseModel):
 
     repo_id: str
     repo_ttl: int
-
-
-class RemoveSessionRequest(BaseModel):
-    """
-    Session deletion request
-    """
-
-    session_id: str
 
 
 MainAPIRouter = APIRouter(prefix="/api")
@@ -112,7 +104,7 @@ async def start_migration_handler(migration: MigrationRequest) -> MigrationRespo
             for i, ts in enumerate(contribs):
                 repo.do_commit(DEFAULT_COMMIT_AUTHOR, email, f"Contribution #{i}", ts)
 
-            repo.add_binary("README", b"Hello, world!\n")
+            repo.add_binary("README.md", render_readme(username, branch))
             repo.do_commit(DEFAULT_COMMIT_AUTHOR, email, "Added readme")
 
             # count all objects and create packfile
