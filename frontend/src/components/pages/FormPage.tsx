@@ -128,7 +128,7 @@ const FormPage = () => {
           defaultValue={defaultHandle}
           caption=
           {<>
-            <Text>Public GitHub account to migrate from. For example <Text fontWeight="bold">octocat</Text> or <Text fontWeight="bold">torvalds</Text>.</Text>
+            <Text>Public GitHub account to migrate from. For example, <Text fontWeight="bold">octocat</Text> or <Text fontWeight="bold">torvalds</Text>.</Text>
           </>
           }
         />

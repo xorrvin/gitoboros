@@ -7,24 +7,22 @@ const PrivacyPolicy = () => {
   return (
     <Box p={2}>
       <Text as="p">
-        All information you enter to the form is never saved
-        to the disk or printed to the log; resulting git repo
-        is cached in RAM (Redis) without any persistence and is
-        deleted after 5 mins.
+        All information you enter into the form is never saved to the disk or
+         printed to the log; the resulting git repo is cached in RAM (Redis)
+         without persistence and deleted after 5 minutes.
       </Text><br />
       <Text as="p">
-        HTTP info like useragent of your browser, your public IP
-        address and other information your browser sends with every
-        request is saved to the nginx log for debug reasons only and
-        is discarded daily.
+        HTTP info like the user agent of your browser, public IP address,
+         and other information your browser sends with every request is saved
+         to the nginx log for debug reasons only and discarded daily.
       </Text><br />
       <Text as="p">
-        Current deployment is using Cloudflare for DDoS protection and they
-        also might log your browser info, especially if you start doing bad things.
+        Current deployment uses Cloudflare for DDoS protection, and they also
+         might log your browser info, especially if you start doing bad things.
       </Text><br />
       <Text as="p">
-        In any case, you're more than welcome to run this locally on your
-        machine using Docker Compose file in the git repo :)
+        In any case, you're more than welcome to run this locally on your machine
+         using the Docker Compose file in the git repo :)
       </Text>
     </Box>
   )

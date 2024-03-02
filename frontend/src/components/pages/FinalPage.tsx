@@ -158,7 +158,7 @@ const ErrorScreen = () => {
         <Text>
           <br />{info}<br /><br />
         </Text>
-        <Text>You can go back to fill the form again, reload the page or try again later.</Text>
+        <Text>You can go back to fill out the form, reload the page, or try again later.</Text>
       </Box>
     </Box>
   )
