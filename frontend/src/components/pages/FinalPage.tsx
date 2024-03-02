@@ -110,8 +110,7 @@ const SuccessScreen = () => {
           borderWidth: "1px",
           borderRadius: "10px",
           padding: "8px",
-          backgroundColor: "neutral.subtle",
-          color: "fg.muted",
+          backgroundColor: "canvas.subtle",
           justifyContent: "center" }}>
           <Box sx={{ paddingTop: '4px' }}>
             <Text fontWeight="bold" fontFamily="monospace" sx={{ fontSize: 2 }}>

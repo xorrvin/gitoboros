@@ -25,7 +25,7 @@ const Layout = () => {
     <Box
       sx={{
         /* main canvas */
-        bg: 'canvas.default',
+        bg: 'canvas.inset',
         width: '100%',
         minHeight: '100vh',
         justifyContent: 'center',

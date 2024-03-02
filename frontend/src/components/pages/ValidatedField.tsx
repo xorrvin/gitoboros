@@ -40,7 +40,7 @@ const ValidatedField = (props: ValidatedFieldProps) => {
   return (
     <FormControl required={required ? true : false} sx={{ marginBottom: 5 }}>
       <FormControl.Label>{label}</FormControl.Label>
-      <TextInput maxLength={64} block placeholder={defaultValue} value={fieldValue} onChange={handleValueChange} onKeyDown={handleKeyDown} />
+      <TextInput sx={{ "backgroundColor": "canvas.inset" }} maxLength={64} block placeholder={defaultValue} value={fieldValue} onChange={handleValueChange} onKeyDown={handleKeyDown} />
       {!valid && (
         <FormControl.Validation variant="error">{validationResult}</FormControl.Validation>
       )}

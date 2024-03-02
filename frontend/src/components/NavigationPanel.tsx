@@ -23,7 +23,7 @@ const NavigationPanel = (props: NavigationPanelProps) => {
       borderStyle: 'solid',
       borderWidth: 1,
       borderColor: 'border.subtle',
-      backgroundColor: "neutral",
+      backgroundColor: "canvas.default",
       borderRadius: 6,
       p: 4,
       display: "flex",
