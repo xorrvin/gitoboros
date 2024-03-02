@@ -43,6 +43,7 @@ app.include_router(GitRouter)
 async def main_init():
     port = int(os.environ.get("HTTP_PORT", 8000))
     host = os.environ.get("HTTP_HOST", "localhost")
+    workers = int(os.environ.get("HTTP_WORKERS", 2))
 
     # update generic logging config
     logging.config.dictConfig(get_generic_logging_config())
@@ -52,6 +53,7 @@ async def main_init():
         app=app,
         port=port,
         host=host,
+        workers=workers,
         proxy_headers=True,
         log_config=get_uvicorn_logging_config(),
     )
