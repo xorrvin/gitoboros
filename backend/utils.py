@@ -1,5 +1,6 @@
 import os
 import logging
+import datetime
 
 from typing import Annotated
 
@@ -60,8 +61,10 @@ async def verify_repo_id(
 
 def render_readme(account, branch):
     current = os.path.dirname(__file__)
+    utcnow = datetime.datetime.utcnow()
+    rfc2822 = utcnow.strftime("%a, %d %b %Y %H:%m:%S GMT")
 
     with open(os.path.join(current, TEMPLATE_NAME)) as file:
         template = Template(file.read())
 
-    return template.render(account=account, branch=branch).encode("ascii")
+    return template.render(account=account, branch=branch, timestamp=rfc2822).encode("ascii")
