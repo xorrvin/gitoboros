@@ -1,3 +1,4 @@
+import os
 import logging
 
 from typing import Annotated
@@ -58,7 +59,9 @@ async def verify_repo_id(
 
 
 def render_readme(account, branch):
-    with open(TEMPLATE_NAME) as file:
+    current = os.path.dirname(__file__)
+
+    with open(os.path.join(current, TEMPLATE_NAME)) as file:
         template = Template(file.read())
 
     return template.render(account=account, branch=branch).encode("ascii")
